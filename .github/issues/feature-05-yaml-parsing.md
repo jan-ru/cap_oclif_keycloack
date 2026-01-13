@@ -12,13 +12,13 @@ Replace the current JSON specification file parser with YAML parser to improve h
 
 ## Acceptance Criteria
 
-- [ ] CLI accepts both .yaml and .yml file extensions
-- [ ] YAML parser correctly parses all existing specification fields
-- [ ] Inline comments are preserved and don't cause parsing errors
-- [ ] Multi-line strings work correctly for descriptions
-- [ ] Error messages are clear and include line numbers when possible
-- [ ] All existing tests pass with YAML specifications
-- [ ] Documentation updated with YAML examples
+- [x] CLI accepts both .yaml and .yml file extensions
+- [x] YAML parser correctly parses all existing specification fields
+- [x] Inline comments are preserved and don't cause parsing errors
+- [x] Multi-line strings work correctly for descriptions
+- [x] Error messages are clear and include line numbers when possible
+- [x] All existing tests pass with YAML specifications
+- [x] Documentation updated with YAML examples
 
 ## Requirements Reference
 
@@ -34,12 +34,12 @@ Replace the current JSON specification file parser with YAML parser to improve h
 
 ## Definition of Done
 
-- [ ] Code implemented and tested
-- [ ] Unit tests written and passing
-- [ ] Integration tests updated with YAML files
-- [ ] Documentation updated with YAML examples
-- [ ] Pre-commit hooks pass
-- [ ] Code reviewed and approved
+- [x] Code implemented and tested
+- [x] Unit tests written and passing
+- [x] Integration tests updated with YAML files
+- [x] Documentation updated with YAML examples
+- [x] Pre-commit hooks pass
+- [x] Code reviewed and approved
 
 ## Example YAML Specification
 
