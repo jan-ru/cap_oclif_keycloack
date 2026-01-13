@@ -1,0 +1,13 @@
+{
+  "entity": "TestCompany",
+  "reportType": "BalanceSheet",
+  "period": "2025-01",
+  "destination": {
+    "url": "http://localhost:4004/odata/v4/financial",
+    "authentication": {
+      "type": "basic",
+      "username": "test",
+      "password": "test"
+    }
+  }
+}
