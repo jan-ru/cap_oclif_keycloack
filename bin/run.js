@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-import { executeCLI } from '../dist/cli.js';
+import { main } from '../dist/main.js';
 
-await executeCLI({ dir: import.meta.url });
+await main();

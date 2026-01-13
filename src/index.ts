@@ -1,6 +1,12 @@
 // Re-export CLI utilities
 export * from './cli.js';
 
+// Re-export main application entry point
+export * from './main.js';
+
+// Re-export API server components
+export * from './api/index.js';
+
 export { default as HelpCommand } from './commands/help.js';
 
 // Re-export commands for programmatic use
