@@ -5,6 +5,9 @@ import morgan from 'morgan';
 
 import { logger } from '../cli.js';
 import { ErrorResponse } from '../types/index.js';
+import { ReportApiService } from './report-api-service.js';
+import { CreateReportRequest } from './types.js';
+import { HealthService, HealthStatus } from './health-service.js';
 
 /**
  * Configuration interface for the API server
@@ -15,6 +18,12 @@ export interface ApiServerConfig {
   corsOrigins: string[];
   enableLogging: boolean;
   environment: 'development' | 'production' | 'test';
+  healthCheck?: {
+    timeout?: number;
+    enableServiceChecks?: boolean;
+    odataServiceUrl?: string;
+    keycloakServiceUrl?: string;
+  };
 }
 
 /**
@@ -36,10 +45,14 @@ export class ApiServer {
   private app: Application;
   private config: ApiServerConfig;
   private server?: import('http').Server;
+  private reportApiService: ReportApiService;
+  private healthService: HealthService;
 
   constructor(config: Partial<ApiServerConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.app = express();
+    this.reportApiService = new ReportApiService();
+    this.healthService = new HealthService(this.config.healthCheck);
     this.setupMiddleware();
     this.setupRoutes();
     this.setupErrorHandling();
@@ -98,14 +111,35 @@ export class ApiServer {
    * Set up API routes
    */
   private setupRoutes(): void {
-    // Health check endpoint
-    this.app.get('/health', (_req: Request, res: Response) => {
-      res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '0.1.3',
-        environment: this.config.environment,
-      });
+    // Health check endpoints
+    this.app.get('/health', async (_req: Request, res: Response, next: NextFunction) => {
+      try {
+        const healthResult = await this.healthService.performHealthCheck();
+        const statusCode = this.getHttpStatusForHealth(healthResult.status);
+        res.status(statusCode).json(healthResult);
+      } catch (error) {
+        next(error);
+      }
+    });
+
+    this.app.get('/health/live', async (_req: Request, res: Response, next: NextFunction) => {
+      try {
+        const healthResult = await this.healthService.performLivenessCheck();
+        const statusCode = this.getHttpStatusForHealth(healthResult.status);
+        res.status(statusCode).json(healthResult);
+      } catch (error) {
+        next(error);
+      }
+    });
+
+    this.app.get('/health/ready', async (_req: Request, res: Response, next: NextFunction) => {
+      try {
+        const healthResult = await this.healthService.performReadinessCheck();
+        const statusCode = this.getHttpStatusForHealth(healthResult.status);
+        res.status(statusCode).json(healthResult);
+      } catch (error) {
+        next(error);
+      }
     });
 
     // API info endpoint
@@ -116,6 +150,8 @@ export class ApiServer {
         description: 'REST API for generating financial reports from OData services',
         endpoints: {
           health: 'GET /health',
+          healthLive: 'GET /health/live',
+          healthReady: 'GET /health/ready',
           reports: 'POST /api/reports',
           reportStatus: 'GET /api/reports/:id',
         },
@@ -123,25 +159,68 @@ export class ApiServer {
       });
     });
 
-    // Placeholder for report endpoints (to be implemented in next tasks)
-    this.app.post('/api/reports', (_req: Request, res: Response) => {
-      res.status(501).json({
-        error: {
-          code: 'NOT_IMPLEMENTED',
-          message: 'Report generation endpoint not yet implemented',
-        },
-        timestamp: new Date(),
-      });
+    // Report generation endpoints
+    this.app.post('/api/reports', async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        // Validate request
+        const validationErrors = this.reportApiService.validateCreateReportRequest(req.body);
+        
+        if (validationErrors.length > 0) {
+          const errorResponse: ErrorResponse = {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Request validation failed',
+              details: validationErrors.map(e => `${e.field}: ${e.message}`).join('; '),
+            },
+            timestamp: new Date(),
+          };
+          res.status(400).json(errorResponse);
+          return;
+        }
+
+        // Process report generation
+        const request = req.body as CreateReportRequest;
+        const result = await this.reportApiService.createReport(request);
+
+        // Return appropriate status code based on result
+        const statusCode = result.status === 'completed' ? 200 : 500;
+        res.status(statusCode).json(result);
+
+      } catch (error) {
+        next(error);
+      }
     });
 
-    this.app.get('/api/reports/:id', (_req: Request, res: Response) => {
-      res.status(501).json({
-        error: {
-          code: 'NOT_IMPLEMENTED',
-          message: 'Report status endpoint not yet implemented',
-        },
-        timestamp: new Date(),
-      });
+    this.app.get('/api/reports/:id', (req: Request, res: Response) => {
+      const jobId = req.params.id;
+      
+      if (!jobId || typeof jobId !== 'string') {
+        const errorResponse: ErrorResponse = {
+          error: {
+            code: 'INVALID_REPORT_ID',
+            message: 'Report ID is required and must be a valid string',
+          },
+          timestamp: new Date(),
+        };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      const status = this.reportApiService.getReportStatus(jobId);
+      
+      if (!status) {
+        const errorResponse: ErrorResponse = {
+          error: {
+            code: 'REPORT_NOT_FOUND',
+            message: `Report with ID '${jobId}' not found`,
+          },
+          timestamp: new Date(),
+        };
+        res.status(404).json(errorResponse);
+        return;
+      }
+
+      res.json(status);
     });
 
     // 404 handler for unknown routes
@@ -225,6 +304,22 @@ export class ApiServer {
       typeof (obj as ErrorResponse).error.message === 'string' &&
       'timestamp' in obj
     );
+  }
+
+  /**
+   * Map health status to HTTP status codes
+   */
+  private getHttpStatusForHealth(healthStatus: HealthStatus): number {
+    switch (healthStatus) {
+      case HealthStatus.Healthy:
+        return 200;
+      case HealthStatus.Degraded:
+        return 200; // Still operational, but with warnings
+      case HealthStatus.Unhealthy:
+        return 503; // Service Unavailable
+      default:
+        return 500;
+    }
   }
 
   /**

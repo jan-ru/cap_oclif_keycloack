@@ -1,16 +1,19 @@
 # Financial Reports CLI
 
-A TypeScript-based command-line tool for retrieving financial reports from OData v4 datasources using the SAP Cloud SDK. This tool provides a typed wrapper interface around @sap-cloud-sdk for querying CAP (Cloud Application Programming) services to generate financial reports based on configurable specifications.
+A TypeScript-based command-line tool and HTTP API for retrieving financial reports from OData v4 datasources using the SAP Cloud SDK. This tool provides both CLI and API interfaces for querying CAP (Cloud Application Programming) services to generate financial reports based on configurable specifications.
 
 ## Features
 
+- **Dual Mode Operation**: Both CLI and HTTP API modes
 - **OData v4 Integration**: Seamless connection to CAP services using SAP Cloud SDK
 - **Multiple Report Types**: Support for Balance Sheet, Income Statement, and Cash Flow reports
 - **Flexible Output Formats**: JSON, CSV, and human-readable table formats
-- **Configuration-Driven**: Define report parameters through JSON specification files
+- **Configuration-Driven**: Define report parameters through YAML or JSON specification files
+- **Health Check Endpoints**: Container-ready health monitoring for orchestration platforms
 - **Type Safety**: Full TypeScript support with strict type checking
 - **Comprehensive Testing**: Unit tests and property-based testing with fast-check
 - **Error Handling**: Detailed error messages and appropriate exit codes
+- **Container Ready**: Docker and Kubernetes deployment support
 
 ## Installation
 
@@ -36,19 +39,21 @@ npm install -g financial-reports-cli
 
 ## Usage
 
-### Basic Usage
+### CLI Mode
+
+#### Basic Usage
 
 ```bash
-financial-reports-cli report path/to/specification.json
+financial-reports-cli report path/to/specification.yaml
 ```
 
-### Command Options
+#### Command Options
 
 ```bash
 financial-reports-cli report [SPECFILE] [OPTIONS]
 
 ARGUMENTS
-  SPECFILE  Path to the report specification JSON file
+  SPECFILE  Path to the report specification YAML/JSON file
 
 OPTIONS
   -f, --format=<option>      Output format
@@ -59,25 +64,96 @@ OPTIONS
   -h, --help                 Show help information
 ```
 
-### Examples
+#### Examples
 
 ```bash
 # Generate a balance sheet report in JSON format
-financial-reports-cli report balance-sheet-spec.json
+financial-reports-cli report balance-sheet-spec.yaml
 
 # Generate an income statement in CSV format
-financial-reports-cli report income-spec.json --format csv
+financial-reports-cli report income-spec.yaml --format csv
 
 # Generate a cash flow report and save to file
-financial-reports-cli report cashflow-spec.json --format table --destination report.txt
+financial-reports-cli report cashflow-spec.yaml --format table --destination report.txt
 
 # Enable verbose logging for debugging
-financial-reports-cli report spec.json --verbose
+financial-reports-cli report spec.yaml --verbose
+```
+
+### HTTP API Mode
+
+#### Starting the API Server
+
+```bash
+# Start API server on default port 3000
+financial-reports-cli --mode api
+
+# Start with custom configuration
+PORT=8080 HOST=0.0.0.0 financial-reports-cli --mode api
+```
+
+#### API Endpoints
+
+- **POST /api/reports** - Generate financial reports
+- **GET /api/reports/:id** - Get report status
+- **GET /health** - Comprehensive health check
+- **GET /health/live** - Liveness probe (Kubernetes)
+- **GET /health/ready** - Readiness probe (Kubernetes)
+- **GET /api** - API information
+
+#### API Usage Examples
+
+```bash
+# Generate a report via API
+curl -X POST http://localhost:3000/api/reports \
+  -H "Content-Type: application/json" \
+  -d '{
+    "specification": {
+      "entity": "CompanyA",
+      "reportType": "BalanceSheet",
+      "period": "2025-01"
+    },
+    "outputFormat": "json"
+  }'
+
+# Check health status
+curl http://localhost:3000/health
+
+# Check readiness for Kubernetes
+curl http://localhost:3000/health/ready
 ```
 
 ## Report Specification Format
 
-Create a JSON file with the following structure:
+Create a YAML or JSON file with the following structure:
+
+### YAML Format (Recommended)
+
+```yaml
+# Financial Report Specification
+entity: CompanyA
+reportType: BalanceSheet  # BalanceSheet | IncomeStatement | Cashflow
+period: "2025-01"         # YYYY-MM format
+
+# Optional OData service configuration
+destination:
+  url: https://your-odata-service.com/api
+  authentication:
+    type: basic
+    username: your-username
+    password: your-password
+
+# Optional filters
+filters:
+  - field: Department
+    operator: eq
+    value: Finance
+  - field: Region
+    operator: in
+    value: [US, EU, APAC]
+```
+
+### JSON Format (Legacy)
 
 ```json
 {
@@ -186,6 +262,121 @@ Generated: 2025-01-13T10:30:00.000Z               Records: 15
 └─────────────┴──────────────────────────────┴─────────────┴──────────┴──────────┘
 ```
 
+## Container Deployment
+
+### Docker
+
+```dockerfile
+FROM node:18-alpine
+RUN apk add --no-cache curl
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY dist ./dist
+EXPOSE 3000
+
+# Health check configuration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/health/ready || exit 1
+
+CMD ["node", "dist/main.js", "--mode", "api"]
+```
+
+### Docker Compose
+
+```yaml
+version: '3.8'
+services:
+  financial-reports-api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - ODATA_SERVICE_URL=http://odata-service:4004/odata/v4/financial
+      - KEYCLOAK_SERVICE_URL=http://keycloak:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+### Kubernetes
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: financial-reports-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: financial-reports-api
+  template:
+    metadata:
+      labels:
+        app: financial-reports-api
+    spec:
+      containers:
+      - name: api
+        image: financial-reports-api:latest
+        ports:
+        - containerPort: 3000
+        
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        # Readiness probe
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+```
+
+For complete container configuration examples, see [docker-healthcheck.md](docker-healthcheck.md).
+
+## Health Check Endpoints
+
+The API provides comprehensive health check endpoints for container orchestration:
+
+- **GET /health** - Full health check with service dependencies
+- **GET /health/live** - Liveness check (always returns 200 when app is running)
+- **GET /health/ready** - Readiness check (validates service dependencies)
+
+### Health Response Format
+
+```json
+{
+  "status": "healthy|degraded|unhealthy",
+  "version": "0.1.4",
+  "timestamp": "2025-01-13T16:44:30.330Z",
+  "environment": "production",
+  "services": {
+    "odata": {
+      "status": "healthy",
+      "responseTime": 45,
+      "lastChecked": "2025-01-13T16:44:30.330Z"
+    },
+    "keycloak": {
+      "status": "healthy",
+      "responseTime": 23,
+      "lastChecked": "2025-01-13T16:44:30.337Z"
+    }
+  },
+  "uptime": 3600
+}
+```
+
 ## Development
 
 ### Setup
@@ -245,10 +436,12 @@ The application follows a layered architecture:
 
 - **ReportCommand**: Main CLI command handler
 - **ReportService**: Core business logic orchestration
-- **ConfigurationService**: Specification parsing and validation
+- **ConfigurationService**: YAML/JSON specification parsing and validation
 - **FinancialDataClient**: OData v4 client wrapper
 - **QueryBuilder**: OData query generation
 - **OutputFormatter**: Multi-format output generation
+- **ApiServer**: HTTP API server with Express.js
+- **HealthService**: Container health check and monitoring
 
 ## Error Handling
 
@@ -309,6 +502,17 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Examples**: See `examples/` directory for sample specification files
 
 ## Changelog
+
+### v0.1.4 (2025-01-13)
+
+- **🚀 HTTP API Mode**: Added comprehensive REST API server with Express.js
+- **🏥 Health Check Endpoints**: Container-ready health monitoring (`/health`, `/health/live`, `/health/ready`)
+- **📊 Service Dependency Monitoring**: OData and Keycloak connectivity validation
+- **🐳 Container Support**: Docker, Kubernetes, and Coolify deployment configurations
+- **⚡ Async Report Processing**: Job tracking and status monitoring for API requests
+- **🔧 Enhanced Configuration**: Health check timeouts and service URL configuration
+- **📝 Container Documentation**: Complete deployment examples and health check configuration
+- **✅ Comprehensive Testing**: 25+ health service tests and API endpoint integration tests
 
 ### v0.1.3 (2025-01-13)
 

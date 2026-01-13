@@ -105,5 +105,18 @@ local/
 
 # Specification files with sensitive data
 *-private.json
+*-private.yaml
+*-private.yml
 *-secret.json
+*-secret.yaml
+*-secret.yml
 *.credentials.json
+*.credentials.yaml
+*.credentials.yml
+
+# Health check test files
+test-health-manual.js
+test-api-manual.js
+
+# Docker health check documentation (keep in repo)
+# docker-healthcheck.md

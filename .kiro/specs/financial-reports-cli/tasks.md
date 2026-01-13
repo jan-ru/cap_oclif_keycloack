@@ -182,20 +182,23 @@ This implementation plan breaks down the Financial Reports CLI into discrete cod
 ### Epic 02: HTTP API Mode Implementation
 
 - [ ] 11. Implement HTTP API server infrastructure
-  - [ ] 11.1 Set up Express.js server with TypeScript configuration
+  - [x] 11.1 Set up Express.js server with TypeScript configuration
     - Create ApiServer class with start/stop methods
     - Configure middleware for JSON parsing, CORS, and error handling
     - Set up environment-based configuration loading
     - _Requirements: 7.1, 7.7, 8.3_
     - _Epic Reference: `.github/issues/epic-02-http-api.md`_
 
-  - [ ] 11.2 Implement core API endpoints for report generation
+  - [x] 11.2 Implement core API endpoints for report generation
     - Create POST /api/reports endpoint accepting JSON report specifications
     - Create GET /api/reports/:id endpoint for async report status
     - Implement request validation and error response formatting
+    - Add comprehensive unit tests for ReportApiService (18 tests passing)
+    - Add integration tests for API endpoints
     - _Requirements: 7.2, 7.3, 7.4_
+    - _Status: ✅ COMPLETED - All endpoints implemented and tested_
 
-  - [ ] 11.3 Add health check endpoints for container orchestration
+  - [x] 11.3 Add health check endpoints for container orchestration
     - Implement GET /api/health endpoint with service status
     - Implement GET /api/health/ready and GET /api/health/live endpoints
     - Add dependency checks for OData and Keycloak services

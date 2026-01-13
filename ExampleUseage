@@ -1,0 +1,18 @@
+# Financial report specification
+entity: TestCompany
+reportType: BalanceSheet  # Options: BalanceSheet, IncomeStatement, Cashflow
+period: "2025-01"         # Format: YYYY-MM
+
+# OData service configuration
+destination:
+  url: http://localhost:4004/odata/v4/financial
+  authentication:
+    type: basic
+    username: testuser
+    password: testpass
+
+# Optional filters
+filters:
+  - field: CompanyCode
+    operator: eq
+    value: "TEST001"

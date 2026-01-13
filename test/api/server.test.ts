@@ -1,12 +1,58 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import { ApiServer } from '../../src/api/server.js';
+import { ReportType } from '../../src/types/index.js';
+
+// Mock the entire ReportApiService instead of ReportService
+vi.mock('../../src/api/report-api-service.js', () => {
+  return {
+    ReportApiService: vi.fn().mockImplementation(() => ({
+      validateCreateReportRequest: vi.fn().mockReturnValue([]),
+      createReport: vi.fn().mockResolvedValue({
+        id: 'test-job-id',
+        status: 'completed',
+        result: {
+          data: [{
+            entity: 'TestEntity',
+            reportType: ReportType.BalanceSheet,
+            period: '2025-01',
+            lineItems: [
+              {
+                account: 'Assets',
+                amount: 100000,
+                currency: 'USD',
+              },
+            ],
+          }],
+          metadata: {
+            entity: 'TestEntity',
+            reportType: ReportType.BalanceSheet,
+            period: '2025-01',
+            recordCount: 1,
+            executionTime: 100,
+            generatedAt: new Date('2025-01-13T10:00:00Z'),
+          },
+        },
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        executionTime: 100,
+      }),
+      getReportStatus: vi.fn().mockReturnValue({
+        id: 'test-job-id',
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        executionTime: 100,
+      }),
+    })),
+  };
+});
 
 describe('API Server Tests', () => {
   let server: ApiServer;
   let app: any;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     server = new ApiServer({
       port: 0, // Use random port for testing
       enableLogging: false, // Disable logging in tests
@@ -16,7 +62,9 @@ describe('API Server Tests', () => {
   });
 
   afterAll(async () => {
-    await server.stop();
+    if (server) {
+      await server.stop();
+    }
   });
 
   describe('Health Check Endpoints', () => {
@@ -47,26 +95,49 @@ describe('API Server Tests', () => {
     });
   });
 
-  describe('Report Endpoints (Placeholder)', () => {
-    test('should return not implemented for POST /api/reports', async () => {
+  describe('Report Endpoints', () => {
+    test('should handle POST /api/reports with valid data', async () => {
+      const validRequest = {
+        specification: {
+          entity: 'TestEntity',
+          reportType: ReportType.BalanceSheet,
+          period: '2025-01',
+        },
+        outputFormat: 'json',
+      };
+
       const response = await request(app)
         .post('/api/reports')
-        .send({ test: 'data' })
-        .expect(501);
+        .send(validRequest)
+        .expect(200);
 
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toHaveProperty('code', 'NOT_IMPLEMENTED');
-      expect(response.body).toHaveProperty('timestamp');
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('status', 'completed');
+      expect(response.body).toHaveProperty('result');
     });
 
-    test('should return not implemented for GET /api/reports/:id', async () => {
-      const response = await request(app)
-        .get('/api/reports/test-id')
-        .expect(501);
+    test('should handle GET /api/reports/:id for existing job', async () => {
+      // First create a report
+      const createResponse = await request(app)
+        .post('/api/reports')
+        .send({
+          specification: {
+            entity: 'TestEntity',
+            reportType: ReportType.BalanceSheet,
+            period: '2025-01',
+          },
+        })
+        .expect(200);
 
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toHaveProperty('code', 'NOT_IMPLEMENTED');
-      expect(response.body).toHaveProperty('timestamp');
+      const jobId = createResponse.body.id;
+
+      // Then get its status
+      const response = await request(app)
+        .get(`/api/reports/${jobId}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id', jobId);
+      expect(response.body).toHaveProperty('status');
     });
   });
 
