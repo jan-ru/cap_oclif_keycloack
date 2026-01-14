@@ -1,7 +1,7 @@
 {
   "name": "financial-reports-cli",
   "description": "A new CLI generated with oclif",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "author": "jan-ru",
   "bin": {
     "financial-reports-cli": "./bin/run.js"
@@ -10,7 +10,6 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5",
     "@sap-cloud-sdk/http-client": "^4.3.1",
     "@sap-cloud-sdk/odata-v4": "^4.3.1",
     "@sap-cloud-sdk/util": "^4.3.1",
@@ -71,8 +70,7 @@
     "dirname": "financial-reports-cli",
     "commands": "./dist/commands",
     "plugins": [
-      "@oclif/plugin-help",
-      "@oclif/plugin-plugins"
+      "@oclif/plugin-help"
     ],
     "topicSeparator": " ",
     "topics": {
