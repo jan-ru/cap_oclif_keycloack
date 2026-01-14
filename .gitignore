@@ -118,5 +118,10 @@ local/
 test-health-manual.js
 test-api-manual.js
 
+# Authentication test files
+test-auth-manual.js
+*-keycloak-test.json
+*-keycloak-test.yaml
+
 # Docker health check documentation (keep in repo)
 # docker-healthcheck.md

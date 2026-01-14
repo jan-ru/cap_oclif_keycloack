@@ -15,6 +15,7 @@ import {
   GetReportStatusResponse,
   ApiValidationError 
 } from './types.js';
+import { UserContext } from '../auth/types.js';
 
 /**
  * API service for handling report generation requests
@@ -115,12 +116,13 @@ export class ReportApiService {
 
   /**
    * Creates and processes a report generation request
+   * Requirement 2.5: Access user context in route handlers
    */
-  async createReport(request: CreateReportRequest): Promise<CreateReportResponse> {
+  async createReport(request: CreateReportRequest, userContext?: UserContext): Promise<CreateReportResponse> {
     const jobId = randomUUID();
     const createdAt = new Date();
 
-    // Create job
+    // Create job with user context
     const job: ReportJob = {
       id: jobId,
       specification: request.specification,
@@ -133,6 +135,16 @@ export class ReportApiService {
         percentage: 0,
       },
     };
+
+    // Add user context for audit trail if available
+    if (userContext) {
+      job.userContext = {
+        userId: userContext.userId,
+        username: userContext.username,
+        realm: userContext.realm,
+        isServiceAccount: userContext.isServiceAccount
+      };
+    }
 
     this.jobs.set(jobId, job);
 
@@ -223,12 +235,24 @@ export class ReportApiService {
 
   /**
    * Gets the status of a report generation job
+   * Implements basic access control - users can only see their own jobs unless they have admin role
    */
-  getReportStatus(jobId: string): GetReportStatusResponse | null {
+  getReportStatus(jobId: string, userContext?: UserContext): GetReportStatusResponse | null {
     const job = this.jobs.get(jobId);
     
     if (!job) {
       return null;
+    }
+
+    // Implement role-based access control
+    if (userContext && job.userContext) {
+      const hasAdminRole = this.hasRole(userContext, 'admin') || this.hasRole(userContext, 'report-admin');
+      const isOwner = job.userContext.userId === userContext.userId;
+      
+      if (!hasAdminRole && !isOwner) {
+        // User doesn't have permission to view this job
+        return null;
+      }
     }
 
     const response: GetReportStatusResponse = {
@@ -259,34 +283,67 @@ export class ReportApiService {
 
   /**
    * Gets all jobs (for debugging/admin purposes)
+   * Requires admin role for access
    */
-  getAllJobs(): GetReportStatusResponse[] {
-    return Array.from(this.jobs.values()).map(job => {
-      const response: GetReportStatusResponse = {
-        id: job.id,
-        status: job.status,
-        createdAt: job.createdAt.toISOString(),
-      };
+  getAllJobs(userContext?: UserContext): GetReportStatusResponse[] {
+    // Implement role-based access control - only admins can see all jobs
+    if (userContext && !this.hasRole(userContext, 'admin') && !this.hasRole(userContext, 'report-admin')) {
+      // Non-admin users can only see their own jobs
+      return Array.from(this.jobs.values())
+        .filter(job => job.userContext?.userId === userContext.userId)
+        .map(job => this.mapJobToResponse(job));
+    }
 
-      if (job.result) {
-        response.result = job.result;
+    return Array.from(this.jobs.values()).map(job => this.mapJobToResponse(job));
+  }
+
+  /**
+   * Helper method to check if user has a specific role
+   */
+  private hasRole(userContext: UserContext, roleName: string): boolean {
+    // Check realm roles
+    if (userContext.roles.includes(roleName)) {
+      return true;
+    }
+
+    // Check client roles across all clients
+    for (const clientRoles of Object.values(userContext.clientRoles)) {
+      if (clientRoles.includes(roleName)) {
+        return true;
       }
+    }
 
-      if (job.error) {
-        response.error = job.error;
-      }
+    return false;
+  }
 
-      if (job.completedAt) {
-        response.completedAt = job.completedAt.toISOString();
-        response.executionTime = job.completedAt.getTime() - job.createdAt.getTime();
-      }
+  /**
+   * Helper method to map job to response
+   */
+  private mapJobToResponse(job: ReportJob): GetReportStatusResponse {
+    const response: GetReportStatusResponse = {
+      id: job.id,
+      status: job.status,
+      createdAt: job.createdAt.toISOString(),
+    };
 
-      if (job.progress) {
-        response.progress = job.progress;
-      }
+    if (job.result) {
+      response.result = job.result;
+    }
 
-      return response;
-    });
+    if (job.error) {
+      response.error = job.error;
+    }
+
+    if (job.completedAt) {
+      response.completedAt = job.completedAt.toISOString();
+      response.executionTime = job.completedAt.getTime() - job.createdAt.getTime();
+    }
+
+    if (job.progress) {
+      response.progress = job.progress;
+    }
+
+    return response;
   }
 
   /**

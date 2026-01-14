@@ -508,7 +508,21 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Documentation**: This README and inline code documentation
 - **Examples**: See `examples/` directory for sample specification files
 
+## Documentation
+
+- **[Authentication Integration Status](docs/AUTHENTICATION_INTEGRATION_STATUS.md)**: Comprehensive status report of Keycloak JWT authentication integration
+- **[Service Account Authentication](docs/SERVICE_ACCOUNT_AUTHENTICATION.md)**: Guide for configuring and using service account authentication
+
 ## Changelog
+
+### v0.1.6 (2025-01-14)
+
+- **✅ Property-Based Testing**: Implemented comprehensive property tests for authentication
+- **🔐 Token Validation Consistency**: Property test validates all requests without JWT tokens return 401
+- **🛡️ Invalid Token Rejection**: Property test validates all invalid JWT tokens are rejected with error details
+- **🧪 Enhanced Test Coverage**: 100+ iterations per property test using fast-check library
+- **📊 Test Quality**: Property tests validate universal correctness properties across random inputs
+- **🔍 Edge Case Coverage**: Tests cover malformed tokens, missing claims, invalid signatures, and more
 
 ### v0.1.5 (2025-01-13)
 

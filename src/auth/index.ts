@@ -8,3 +8,5 @@ export * from './authentication-auditor.js';
 export * from './rate-limiter.js';
 export * from './config.js';
 export * from './error-handler.js';
+export * from './client-credentials-service.js';
+export * from './service-account-helper.js';

@@ -68,6 +68,12 @@ export interface ReportJob {
     step: string;
     percentage: number;
   };
+  userContext?: {
+    userId: string;
+    username: string;
+    realm: string;
+    isServiceAccount: boolean;
+  };
 }
 
 /**
