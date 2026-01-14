@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { JWKSClientService } from '../../src/auth/jwks-client.js';
 import { JWTValidatorService } from '../../src/auth/jwt-validator.js';
 import jwt from 'jsonwebtoken';

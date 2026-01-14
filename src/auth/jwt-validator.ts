@@ -76,13 +76,13 @@ export class JWTValidatorService implements JWTValidator {
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         // Requirement 1.3: Handle expired tokens
-        throw new Error(`Token expired: ${error.message}`);
+        throw new TypeError(`Token expired: ${error.message}`);
       } else if (error instanceof jwt.JsonWebTokenError) {
         // Requirement 1.2: Handle invalid tokens
-        throw new Error(`Invalid token: ${error.message}`);
+        throw new TypeError(`Invalid token: ${error.message}`);
       } else if (error instanceof jwt.NotBeforeError) {
         // Handle tokens that are not yet valid
-        throw new Error(`Token not yet valid: ${error.message}`);
+        throw new TypeError(`Token not yet valid: ${error.message}`);
       } else {
         // Re-throw other errors (including our custom validation errors)
         throw error;
@@ -205,7 +205,7 @@ export class JWTValidatorService implements JWTValidator {
         
         const accessObj = access as any;
         if (!Array.isArray(accessObj.roles)) {
-          throw new Error(`Invalid payload: resource_access.${clientId}.roles must be an array`);
+          throw new TypeError(`Invalid payload: resource_access.${clientId}.roles must be an array`);
         }
       }
     }

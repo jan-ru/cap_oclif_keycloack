@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import jwt from 'jsonwebtoken';
 import { JWTValidatorService } from '../../src/auth/jwt-validator.js';
 import { JWKSClient, JWKS, JWK } from '../../src/auth/types.js';
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { JWKSClientService } from '../../src/auth/jwks-client.js';
 import { JWTValidatorService } from '../../src/auth/jwt-validator.js';
 import { AuthenticationMiddlewareService } from '../../src/auth/middleware.js';

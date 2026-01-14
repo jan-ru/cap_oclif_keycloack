@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthConfigLoader } from '../../src/auth/config.js';
 import { UserContextExtractorService } from '../../src/auth/user-context-extractor.js';
-import { JWTPayload, RealmConfig } from '../../src/auth/types.js';
+import { JWTPayload } from '../../src/auth/types.js';
 
 describe('Multi-Realm Support - Property Tests', () => {
   const originalEnv = process.env;

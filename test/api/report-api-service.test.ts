@@ -1,8 +1,7 @@
-import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReportApiService } from '../../src/api/report-api-service.js';
-import { ReportService } from '../../src/services/report-service.js';
 import { CreateReportRequest } from '../../src/api/types.js';
-import { ReportResult, ReportSpecification, ReportType } from '../../src/types/index.js';
+import { ReportResult, ReportType } from '../../src/types/index.js';
 
 // Mock the ReportService
 vi.mock('../../src/services/report-service.js', () => ({

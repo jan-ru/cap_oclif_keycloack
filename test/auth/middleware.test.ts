@@ -7,8 +7,7 @@ import {
   AuthenticationAuditor,
   AuthConfig,
   JWTPayload,
-  UserContext,
-  AuthEvent
+  UserContext
 } from '../../src/auth/types.js';
 
 describe('AuthenticationMiddleware', () => {

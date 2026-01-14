@@ -2,7 +2,6 @@ import fc from 'fast-check';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthConfigLoader } from '../../src/auth/config.js';
-import { KeycloakAuthConfig } from '../../src/auth/types.js';
 
 describe('AuthConfigLoader - Property Tests', () => {
   const originalEnv = process.env;

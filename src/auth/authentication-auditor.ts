@@ -183,6 +183,7 @@ export class AuthenticationAuditorService implements AuthenticationAuditor {
         // Return current timestamp for invalid dates
         return new Date().toISOString();
       }
+
       return date.toISOString();
     } catch {
       // Fallback to current timestamp if any error occurs

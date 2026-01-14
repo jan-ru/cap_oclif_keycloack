@@ -420,41 +420,41 @@ export class AuthenticationErrorHandler {
    * Get error type from error message (for backward compatibility)
    */
   static getErrorTypeFromMessage(errorMessage: string): AuthErrorType {
-    const errorMessage_lower = errorMessage.toLowerCase();
+    const errorMessageLower = errorMessage.toLowerCase();
     
-    if (errorMessage_lower.includes('expired')) {
+    if (errorMessageLower.includes('expired')) {
       return AuthErrorType.TOKEN_EXPIRED;
     }
     
-    if (errorMessage_lower.includes('malformed') || errorMessage_lower.includes('invalid format')) {
+    if (errorMessageLower.includes('malformed') || errorMessageLower.includes('invalid format')) {
       return AuthErrorType.TOKEN_MALFORMED;
     }
     
-    if (errorMessage_lower.includes('signature')) {
+    if (errorMessageLower.includes('signature')) {
       return AuthErrorType.SIGNATURE_INVALID;
     }
     
-    if (errorMessage_lower.includes('issuer')) {
+    if (errorMessageLower.includes('issuer')) {
       return AuthErrorType.ISSUER_INVALID;
     }
     
-    if (errorMessage_lower.includes('audience')) {
+    if (errorMessageLower.includes('audience')) {
       return AuthErrorType.AUDIENCE_INVALID;
     }
     
-    if (errorMessage_lower.includes('claims')) {
+    if (errorMessageLower.includes('claims')) {
       return AuthErrorType.CLAIMS_INVALID;
     }
     
-    if (errorMessage_lower.includes('jwks') || errorMessage_lower.includes('keys')) {
+    if (errorMessageLower.includes('jwks') || errorMessageLower.includes('keys')) {
       return AuthErrorType.JWKS_UNAVAILABLE;
     }
     
-    if (errorMessage_lower.includes('rate limit')) {
+    if (errorMessageLower.includes('rate limit')) {
       return AuthErrorType.RATE_LIMIT_EXCEEDED;
     }
     
-    if (errorMessage_lower.includes('configuration')) {
+    if (errorMessageLower.includes('configuration')) {
       return AuthErrorType.CONFIGURATION_ERROR;
     }
     

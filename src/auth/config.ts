@@ -162,13 +162,15 @@ export class AuthConfigLoader {
 
     // Validate URL formats
     try {
-      void new URL(realm.url);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _urlCheck = new URL(realm.url);
     } catch {
       throw new Error(`Invalid URL for realm ${realm.name}: ${realm.url}`);
     }
 
     try {
-      void new URL(realm.issuer);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _issuerCheck = new URL(realm.issuer);
     } catch {
       throw new Error(`Invalid issuer URL for realm ${realm.name}: ${realm.issuer}`);
     }
@@ -307,14 +309,16 @@ export class AuthConfigLoader {
   private static validateConfig(config: KeycloakAuthConfig): void {
     // Validate Keycloak URL format
     try {
-      void new URL(config.keycloak.url);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _keycloakUrlCheck = new URL(config.keycloak.url);
     } catch {
       throw new Error(`Invalid Keycloak URL: ${config.keycloak.url}`);
     }
 
     // Validate JWT issuer format
     try {
-      void new URL(config.jwt.issuer);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _issuerCheck = new URL(config.jwt.issuer);
     } catch {
       throw new Error(`Invalid JWT issuer URL: ${config.jwt.issuer}`);
     }
